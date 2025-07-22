@@ -1,0 +1,16 @@
+# Node.js
+node_modules/
+.env
+
+# MacOS
+.DS_Store
+
+# npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# build directories
+backend/uploads/ # Exclude uploaded files
+frontend/build/ # Exclude frontend build output
+frontend/.env # Exclude frontend .env if you have one there too
