@@ -137,51 +137,37 @@ Follow these instructions to get a copy of the project up and running on your lo
 You can now register a new user, log in, and start uploading documents!
 
 ### 5. Project Structure
+
 smart-doc-ai/
-|-- backend/
-|   |-- config/              - Database connection configuration (e.g., db.js)
-|   |
-|   |-- controllers/         - Handles business logic and API request processing
-|   |
-|   |-- middleware/          - Express middleware for authentication, error handling
-|   |
-|   |-- models/              - Mongoose schemas for MongoDB (e.g., userModel.js, documentModel.js)
-|   |
-|   |-- routes/              - Defines API endpoints and links to controllers
-|   |
-|   |-- uploads/             - Directory for storing uploaded documents (excluded from Git)
-|   |
-|   |-- utils/               - Utility functions (e.g., JWT token generation)
-|   |
-|   |-- .env                 - Environment variables for backend (e.g., MONGO_URI, OPENAI_API_KEY) - EXCLUDED FROM GIT
-|   |
-|   |-- package.json         - Backend dependencies and scripts
-|   |
-|   |-- server.js            - Main entry point for the backend Express application
-|
-|-- frontend/
-|   |-- public/              - Static assets (e.g., index.html, favicon)
-|   |
-|   |-- src/                 - React application source code
-|   |   |-- api/             - (Optional) Centralized API service calls
-|   |   |-- components/      - Reusable UI components (e.g., DocumentItem, Navbar)
-|   |   |-- context/         - React Context API for global state management (e.g., AuthContext)
-|   |   |-- pages/           - Top-level page components (e.g., Login, Dashboard)
-|   |   |-- App.js           - Main application component, sets up routing
-|   |   |-- index.js         - Entry point for the React application
-|   |   |-- index.css        - Global CSS styles
-|   |
-|   |-- .env                 - Environment variables for frontend (e.g., REACT_APP_API_URL) - EXCLUDED FROM GIT
-|   |
-|   |-- package.json         - Frontend dependencies and scripts
-|   |
-|   |-- README.md            - (Optional) Frontend-specific README
-|
-|-- .gitignore               - Specifies files/directories to be ignored by Git (e.g., node_modules, .env)
-|
-|-- LICENSE                  - Project licensing information (e.g., MIT License)
-|
-|-- README.md                - This comprehensive project README file
+  backend/
+    config/              - Database connection configuration
+    controllers/         - API request processing logic
+    middleware/          - Authentication and error handling
+    models/              - MongoDB schemas
+    routes/              - API endpoint definitions
+    uploads/             - Uploaded document storage (excluded from Git)
+    utils/               - Utility functions
+    .env                 - Backend environment variables (EXCLUDED FROM GIT)
+    package.json         - Backend dependencies
+    server.js            - Main backend application file
+
+  frontend/
+    public/              - Static assets
+    src/                 - React application source code
+      api/               - (Optional) Centralized API calls
+      components/        - Reusable UI components
+      context/           - React Context for authentication
+      pages/             - Page-level components
+      App.js             - Main React component
+      index.js           - Entry point for React app
+      index.css          - Global CSS styles
+    .env                 - Frontend environment variables (EXCLUDED FROM GIT)
+    package.json         - Frontend dependencies
+    README.md            - (Optional) Frontend-specific README
+
+  .gitignore               - Git ignore rules
+  LICENSE                  - Project license
+  README.md                - This comprehensive project README file
 
 ### 6. Evaluation Criteria Breakdown
 
