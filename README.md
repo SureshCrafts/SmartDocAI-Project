@@ -136,9 +136,9 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 You can now register a new user, log in, and start uploading documents!
 
-```bash
 ### 5. Project Structure
 
+```bash
 smart-doc-ai/  
 ├── backend/  
 │   ├── config/             # Database connection configuration (e.g., db.js)  
