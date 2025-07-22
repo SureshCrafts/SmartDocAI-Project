@@ -139,32 +139,32 @@ You can now register a new user, log in, and start uploading documents!
 ### 5. Project Structure
 smart-doc-ai/
 ├── backend/
-│   ├── config/              # Database connection
-│   ├── controllers/         # Logic for API routes (users, documents)
-│   ├── middleware/          # Authentication and error handling
-│   ├── models/              # Mongoose schemas (User, Document)
-│   ├── routes/              # API routes definitions
-│   ├── uploads/             # Directory for uploaded files (excluded from Git)
-│   ├── utils/               # Utility functions (e.g., generate JWT)
-│   ├── .env                 # Environment variables (excluded from Git)
-│   ├── package.json         # Backend dependencies
-│   └── server.js            # Main backend application file
+│   ├── config/              # Database connection configuration (e.g., db.js)
+│   ├── controllers/         # Handles business logic and API request processing
+│   ├── middleware/          # Express middleware for authentication, error handling
+│   ├── models/              # Mongoose schemas for MongoDB (e.g., userModel.js, documentModel.js)
+│   ├── routes/              # Defines API endpoints and links to controllers
+│   ├── uploads/             # Directory for storing uploaded documents (excluded from Git)
+│   ├── utils/               # Utility functions (e.g., JWT token generation)
+│   ├── .env                 # Environment variables for backend (e.g., MONGO_URI, OPENAI_API_KEY) - EXCLUDED FROM GIT
+│   ├── package.json         # Backend dependencies and scripts
+│   └── server.js            # Main entry point for the backend Express application
 ├── frontend/
-│   ├── public/              # Public assets
-│   ├── src/                 # React source code
-│   │   ├── api/             # API service calls (optional, not used here)
-│   │   ├── components/      # Reusable React components (Dashboard, DocumentItem, etc.)
-│   │   ├── context/         # React Context for authentication
-│   │   ├── pages/           # Page-level components (Login, Register, Dashboard)
-│   │   ├── App.js           # Main React component
-│   │   ├── index.js         # Entry point for React app
-│   │   └── index.css/js     # Global styles
-│   ├── .env.development     # Frontend environment variables (optional, for React apps)
-│   ├── package.json         # Frontend dependencies
-│   └── README.md            # Frontend specific README (optional)
-├── .gitignore               # Specifies intentionally untracked files to ignore by Git
-└── README.md                # This project README file
-
+│   ├── public/              # Static assets (e.g., index.html, favicon)
+│   ├── src/                 # React application source code
+│   │   ├── api/             # (Optional) Centralized API service calls
+│   │   ├── components/      # Reusable UI components (e.g., DocumentItem, Navbar)
+│   │   ├── context/         # React Context API for global state management (e.g., AuthContext)
+│   │   ├── pages/           # Top-level page components (e.g., Login, Dashboard)
+│   │   ├── App.js           # Main application component, sets up routing
+│   │   ├── index.js         # Entry point for the React application
+│   │   └── index.css        # Global CSS styles
+│   ├── .env                 # Environment variables for frontend (e.g., REACT_APP_API_URL) - EXCLUDED FROM GIT
+│   ├── package.json         # Frontend dependencies and scripts
+│   └── README.md            # (Optional) Frontend-specific README
+├── .gitignore               # Specifies files/directories to be ignored by Git (e.g., node_modules, .env)
+├── LICENSE                  # Project licensing information (e.g., MIT License)
+└── README.md                # This comprehensive project README file
 ---
 
 ### 6. Evaluation Criteria Breakdown
