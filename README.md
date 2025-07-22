@@ -294,9 +294,4 @@ The SmartDoc AI project has a clear roadmap for future development:
 * **User-Defined AI Prompts:** Allow advanced users to customize AI summarization or Q&A prompts for specific needs.
 * **Notification System:** Implement email or in-app notifications for long-running processes or new insights.
 
-### 8. License
-
-This project is open-source and available under the [MIT License](LICENSE).
-*(If you have a LICENSE file in your repo, ensure you update the link accordingly, otherwise, choose a license and add a LICENSE file)*
-
 ---
