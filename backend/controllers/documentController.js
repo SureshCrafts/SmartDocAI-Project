@@ -6,6 +6,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
+const pdf = require('pdf-parse'); // For PDF processing
+const mammoth = require('mammoth'); // For DOCX processing
+const Tesseract = require('tesseract.js'); // For OCR on images (if implementing)
 
 // Configure Multer storage (remains the same)
 const storage = multer.diskStorage({
@@ -105,37 +108,58 @@ const uploadDocument = asyncHandler(async (req, res) => {
         let summary = '';
 
         try {
-            // Ensure the file is readable as text
-            if (mimetype.startsWith('text/') || mimetype === 'application/pdf' || mimetype === 'application/msword' || mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                const fileBuffer = fs.readFileSync(filePath);
-                extractedText = fileBuffer.toString('utf8'); // Read as UTF-8 string
-                console.log('Read extractedText from file (first 200 chars):', extractedText.substring(0, 200)); // Log extracted text
-
+            // --- STEP 1: FILE EXTRACTION ---
+            if (mimetype === 'application/pdf') {
+                const dataBuffer = fs.readFileSync(filePath);
+                const data = await pdf(dataBuffer);
+                extractedText = data.text;
+                console.log('Extracted text from PDF (first 200 chars):', extractedText.substring(0, 200));
+            } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') { // .docx
+                const docxBuffer = fs.readFileSync(filePath);
+                const result = await mammoth.extractRawText({ arrayBuffer: docxBuffer });
+                extractedText = result.value;
+                console.log('Extracted text from DOCX (first 200 chars):', extractedText.substring(0, 200));
+            } else if (mimetype === 'text/plain') {
+                extractedText = fs.readFileSync(filePath, 'utf8');
+                console.log('Extracted text from TXT (first 200 chars):', extractedText.substring(0, 200));
             } else if (mimetype.startsWith('image/')) {
-                extractedText = 'Image file uploaded. OCR not yet implemented.';
-                console.log('Extracted text placeholder for image:', extractedText);
+                const { data: { text } } = await Tesseract.recognize(filePath, 'eng', {
+                     logger: m => console.log(m)
+                });
+                extractedText = text;
+                console.log('Extracted text from Image (OCR, first 200 chars):', extractedText.substring(0, 200));
             } else {
-                extractedText = 'Unsupported file type for direct text extraction.';
+                extractedText = 'Unsupported file type for direct AI processing.';
                 console.log('Extracted text placeholder for unsupported type:', extractedText);
             }
 
             const textForAI = extractedText.substring(0, 4000);
             console.log('Text sent to AI (first 200 chars):', textForAI.substring(0, 200));
 
+            // --- STEP 2: AI SUMMARIZATION (THIS WAS OUTSIDE YOUR PREVIOUS TRY BLOCK) ---
+            // --- ADD THESE NEW LOGS FOR DEBUGGING (as suggested previously) ---
+            console.log('textForAI length:', textForAI.length);
+            console.log('textForAI contains "OCR not yet implemented":', textForAI.includes('OCR not yet implemented'));
+            console.log('textForAI contains "Unsupported file type":', textForAI.includes('Unsupported file type'));
+            // --- END NEW LOGS ---
 
             if (textForAI.length > 50 && !textForAI.includes('OCR not yet implemented') && !textForAI.includes('Unsupported file type')) {
                 console.log('Attempting to call OpenAI for summarization...');
                 summary = await queryOpenAI(textForAI, 'gpt-3.5-turbo');
-                console.log('OpenAI Summary received:', summary.substring(0, 200)); // Log the received summary
+                console.log('OpenAI Summary received:', summary.substring(0, 200));
             } else {
                 summary = 'Not enough text or unsupported file type for AI summarization.';
                 console.log('Skipping OpenAI call, summary:', summary);
             }
 
-        } catch (aiError) {
-            console.warn(`AI processing failed for ${originalname}:`, aiError.message);
-            summary = `AI processing failed: ${aiError.message}`;
+        } catch (error) { // Renamed aiError to error for broader catching
+            console.error(`An error occurred during document processing or AI summarization for ${originalname}:`, error.message);
+            summary = `AI processing failed: ${error.message}`;
+            // Optional: If you want to send a specific error response to the client
+            // res.status(500).json({ message: `Document processing failed: ${error.message}` });
+            // return; // Exit if you've already sent a response
         }
+
 
         // --- CRITICAL CHECK POINT ---
         console.log('--- Before Saving to DB ---');
