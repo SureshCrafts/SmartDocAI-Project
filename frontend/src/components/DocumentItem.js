@@ -59,7 +59,7 @@ const ItemName = styled.span`
 
 const ItemMeta = styled.span`
     font-size: 0.85em;
-    color: #666;
+    color: var(--gray);
     margin-top: 5px;
 `;
 
@@ -182,6 +182,42 @@ function DocumentItem({ document, onDelete }) {
   const [qaLoading, setQaLoading] = useState(false);
   const [qaError, setQaError] = useState(null);
 
+  // SVG Icon for PDF files, inspired by the official logo
+  const PdfIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="48" height="48">
+      <path fill="#F40F02" d="M8 2H42C44.2 2 46 3.8 46 6V44C46 46.2 44.2 48 42 48H8C5.8 48 4 46.2 4 44V6C4 3.8 5.8 2 8 2Z" />
+      <path fill="#FFFFFF" d="M17.1,29.2h-2.4v-9.5h4.4c1.8,0,2.9,0.4,3.7,1.1c0.8,0.7,1.2,1.8,1.2,3.1c0,1.3-0.4,2.3-1.2,3.1c-0.8,0.7-1.9,1.1-3.7,1.1h-2V29.2z M17.1,27.1h1.4c1.1,0,1.9-0.2,2.4-0.7c0.5-0.5,0.8-1.2,0.8-2.1c0-0.9-0.3-1.6-0.8-2.1c-0.5-0.5-1.3-0.7-2.4-0.7h-1.4V27.1z" />
+      <path fill="#FFFFFF" d="M26.6,29.2h-2.4V19.7h2.4V29.2z" />
+      <path fill="#FFFFFF" d="M37.2,29.2h-2.4l-3.3-4.8h-0.1v4.8h-2.2V19.7h2.4c1.8,0,2.9,0.4,3.7,1.1c0.8,0.7,1.2,1.8,1.2,3.1c0,1.2-0.3,2.2-0.9,2.9l3.5,5.4H37.2z M33.7,21.8h-1.4v4.4h1.4c1.1,0,1.9-0.2,2.4-0.7c0.5-0.5,0.8-1.1,0.8-2c0-0.8-0.3-1.5-0.8-2C35.6,22,34.8,21.8,33.7,21.8z" />
+    </svg>
+  );
+
+  // SVG Icon for Word files, inspired by the official logo
+  const WordIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="48" height="48">
+      <path fill="#2B579A" d="M8 2H42C44.2 2 46 3.8 46 6V44C46 46.2 44.2 48 42 48H8C5.8 48 4 46.2 4 44V6C4 3.8 5.8 2 8 2Z" />
+      <path fill="#FFFFFF" d="M14.6,19.7h3.2l2.4,6.8h0.1l2.4-6.8h3.2v9.5h-2.3V22h-0.1l-2.7,7.2h-1.6l-2.7-7.2h-0.1v7.2h-2.3V19.7z" />
+      <path fill="#FFFFFF" d="M35.4,24.4c0-1.3-0.4-2.3-1.2-3.1c-0.8-0.7-1.9-1.1-3.3-1.1c-1.4,0-2.5,0.4-3.3,1.1c-0.8,0.7-1.2,1.8-1.2,3.1c0,1.3,0.4,2.4,1.2,3.1c0.8,0.7,1.9,1.1,3.3,1.1c1.4,0,2.5-0.4,3.3-1.1C35,26.8,35.4,25.7,35.4,24.4z M33.2,24.4c0,0.9-0.2,1.5-0.7,2c-0.5,0.5-1.1,0.7-1.9,0.7c-0.8,0-1.4-0.2-1.9-0.7c-0.5-0.5-0.7-1.2-0.7-2c0-0.9,0.2-1.5,0.7-2c0.5-0.5,1.1-0.7,1.9-0.7c0.8,0,1.4,0.2,1.9,0.7C33,22.9,33.2,23.5,33.2,24.4z" />
+    </svg>
+  );
+
+  // Helper function to get an icon based on the file type
+  const getFileIcon = (fileType) => {
+    if (fileType.includes('pdf')) {
+      return <PdfIcon />;
+    }
+    if (fileType.includes('wordprocessingml')) { // for .docx
+      return <WordIcon />;
+    }
+    if (fileType.includes('image')) {
+      return '🖼️'; // Framed picture for images
+    }
+    if (fileType.includes('text')) {
+      return '🗒️'; // Spiral notepad for text
+    }
+    return '📄'; // Default document icon
+  };
+
   const handleAskQuestion = async (e) => {
       e.preventDefault();
       if (!question.trim()) {
@@ -208,7 +244,7 @@ function DocumentItem({ document, onDelete }) {
 
   return (
     <ItemContainer>
-      <Thumbnail>📄</Thumbnail>
+      <Thumbnail>{getFileIcon(document.fileType)}</Thumbnail>
       <ItemContent>
         <ItemHeader>
           <ItemInfo>
@@ -219,7 +255,7 @@ function DocumentItem({ document, onDelete }) {
           </ItemInfo>
           <ButtonGroup>
             <ToggleDetailsButton onClick={() => setShowDetails(!showDetails)}>
-              {showDetails ? 'Hide' : 'Details'}
+              {showDetails ? 'Hide Summary' : 'Show Summary'}
             </ToggleDetailsButton>
             <ToggleDetailsButton onClick={() => setShowQA(!showQA)}>
               {showQA ? 'Hide' : 'Q&A'}
@@ -234,10 +270,6 @@ function DocumentItem({ document, onDelete }) {
             <SectionTitle>AI Summary:</SectionTitle>
             <ContentBox>
               <p>{document.summary || 'No summary available.'}</p>
-            </ContentBox>
-            <SectionTitle>Extracted Text:</SectionTitle>
-            <ContentBox>
-              <p>{document.extractedText || 'No extracted text available.'}</p>
             </ContentBox>
           </DetailsContainer>
         )}
