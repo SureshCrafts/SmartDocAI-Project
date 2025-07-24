@@ -1,42 +1,19 @@
 // frontend/src/pages/Register.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
 import { toast } from 'react-toastify';
-import axios from 'axios'; // For making HTTP requests
-
-// Styled Components for form
-const FormContainer = styled.div`
-  max-width: 500px;
-  margin: 40px auto;
-  padding: 30px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-`;
-
-const FormTitle = styled.h2`
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-  font-size: 2.2rem;
-`;
-
-const Button = styled.button`
-  background-color: #007bff;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  width: 100%;
-  font-size: 1.1rem;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
+import { useAuth } from '../context/AuthContext';
+import authService from '../services/authService';
+import {
+    FormContainer,
+    FormTitle,
+    Form,
+    FormGroup,
+    Input,
+    Button,
+    FormText,
+    FormLink
+} from '../components/FormStyles';
 
 function Register() {
     const [formData, setFormData] = useState({
@@ -49,14 +26,14 @@ function Register() {
     const { username, email, password, confirmPassword } = formData;
 
     const navigate = useNavigate();
+    const { user, login } = useAuth();
 
     // Check if user is already logged in (e.g., from localStorage)
     useEffect(() => {
-        const userInfo = localStorage.getItem('userInfo');
-        if (userInfo) {
+        if (user) {
             navigate('/'); // If logged in, redirect to dashboard
         }
-    }, [navigate]); // navigate is a dependency of useEffect
+    }, [user, navigate]); // navigate is a dependency of useEffect
 
     // Handle form input changes
     const onChange = (e) => {
@@ -76,24 +53,13 @@ function Register() {
         }
 
         try {
-            // API call to backend register endpoint
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            };
-
-            const response = await axios.post(
-                'http://localhost:5001/api/auth/register', // Our backend register endpoint
-                { username, email, password },
-                config
-            );
+            const response = await authService.register({ username, email, password });
 
             // If registration is successful
             if (response.data) {
                 toast.success('Registration successful! You are now logged in.');
-                // Store user info (including token) in local storage
-                localStorage.setItem('userInfo', JSON.stringify(response.data));
+                // Use the login function from context to set user state and localStorage
+                login(response.data);
                 navigate('/'); // Redirect to dashboard
             }
         } catch (error) {
@@ -111,46 +77,42 @@ function Register() {
     return (
         <FormContainer>
             <FormTitle>Register</FormTitle>
-            <form onSubmit={onSubmit}>
-                <div className="form-group">
-                    <label htmlFor="username">Username</label>
-                    <input
+            <Form onSubmit={onSubmit}>
+                <FormGroup>
+                    <Input
                         type="text"
                         id="username"
                         name="username"
                         value={username}
                         onChange={onChange}
-                        placeholder="Enter your username"
+                        placeholder="Username"
                         required
                     />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="email">Email address</label>
-                    <input
+                </FormGroup>
+                <FormGroup>
+                    <Input
                         type="email"
                         id="email"
                         name="email"
                         value={email}
                         onChange={onChange}
-                        placeholder="Enter your email"
+                        placeholder="Email address"
                         required
                     />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <input
+                </FormGroup>
+                <FormGroup>
+                    <Input
                         type="password"
                         id="password"
                         name="password"
                         value={password}
+                        placeholder="Password"
                         onChange={onChange}
-                        placeholder="Enter password"
                         required
                     />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="confirmPassword">Confirm Password</label>
-                    <input
+                </FormGroup>
+                <FormGroup>
+                    <Input
                         type="password"
                         id="confirmPassword"
                         name="confirmPassword"
@@ -159,11 +121,12 @@ function Register() {
                         placeholder="Confirm password"
                         required
                     />
-                </div>
-                <div className="form-group">
-                    <Button type="submit">Register</Button>
-                </div>
-            </form>
+                </FormGroup>
+                <Button type="submit">Register</Button>
+            </Form>
+            <FormText>
+                Already have an account? <FormLink to="/login">Sign in.</FormLink>
+            </FormText>
         </FormContainer>
     );
 }

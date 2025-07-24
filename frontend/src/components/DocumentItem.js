@@ -1,21 +1,38 @@
 // frontend/src/components/DocumentItem.js
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import axios from 'axios'; // Import axios for API calls
 import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext'; // To get user token
+import documentService from '../services/documentService';
 
 // Styled components specific to the DocumentItem
-const ItemContainer = styled.div`
-    border: 1px solid #e0e0e0;
+const ItemContainer = styled.article`
+    background-color: var(--charcoal);
     border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+`;
+
+const Thumbnail = styled.div`
+    width: 100%;
+    height: 150px;
+    background-color: var(--jet);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--gray);
+`;
+
+const ItemContent = styled.div`
+    padding: 15px;
 `;
 
 const ItemHeader = styled.div`
@@ -36,7 +53,7 @@ const ItemInfo = styled.div`
 
 const ItemName = styled.span`
     font-weight: bold;
-    color: #333;
+    color: #fff;
     font-size: 1.1em;
 `;
 
@@ -56,15 +73,15 @@ const ButtonGroup = styled.div`
 `;
 
 const ToggleDetailsButton = styled.button`
-    background-color: #6c757d;
-    color: white;
+    background-color: var(--jet);
+    color: var(--light-gray);
     padding: 8px 12px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.8rem;
     &:hover {
-        background-color: #5a6268;
+        background-color: #383838;
     }
 `;
 
@@ -77,7 +94,7 @@ const DeleteButton = styled.button`
     cursor: pointer;
     font-size: 0.8rem;
     &:hover {
-        background-color: #c82333;
+        background-color: #b20710;
     }
 `;
 
@@ -89,7 +106,7 @@ const DetailsContainer = styled.div`
 `;
 
 const SectionTitle = styled.h4`
-    color: #555;
+    color: var(--light-gray);
     margin-bottom: 8px;
     font-size: 1em;
 `;
@@ -97,9 +114,9 @@ const SectionTitle = styled.h4`
 const ContentBox = styled.div`
     max-height: 250px;
     overflow-y: auto;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--jet);
     padding: 15px;
-    background-color: #fdfdfd;
+    background-color: var(--black);
     border-radius: 5px;
     font-size: 0.85em;
     line-height: 1.6;
@@ -126,8 +143,8 @@ const QAForm = styled.form`
 
 const QuestionInput = styled.input`
     flex-grow: 1;
-    padding: 10px;
-    border: 1px solid #ccc;
+    padding: 8px;
+    border: 1px solid var(--jet);
     border-radius: 5px;
     font-size: 0.9em;
     min-width: 200px; /* Ensure input doesn't get too small */
@@ -135,7 +152,7 @@ const QuestionInput = styled.input`
 
 const AskButton = styled.button`
     background-color: #28a745; /* Green color for Ask */
-    color: white;
+    color: #fff;
     padding: 10px 15px;
     border: none;
     border-radius: 5px;
@@ -151,14 +168,13 @@ const AskButton = styled.button`
 `;
 
 const AnswerBox = styled(ContentBox)` /* Reuses ContentBox styles */
-    background-color: #e6f7ff; /* Light blue for answer */
-    border-color: #99d9ed;
+    background-color: #1f2c33; /* Dark blue for answer */
+    border-color: var(--blue);
 `;
 
 
 // DocumentItem Functional Component
 function DocumentItem({ document, onDelete }) {
-  const { user } = useAuth(); // Get user token from AuthContext
   const [showDetails, setShowDetails] = useState(false); // For extracted text and summary
   const [showQA, setShowQA] = useState(false); // For Q&A section
   const [question, setQuestion] = useState('');
@@ -166,16 +182,10 @@ function DocumentItem({ document, onDelete }) {
   const [qaLoading, setQaLoading] = useState(false);
   const [qaError, setQaError] = useState(null);
 
-  const API_URL = `http://localhost:5001/api/documents/${document._id}/ask`;
-
   const handleAskQuestion = async (e) => {
       e.preventDefault();
       if (!question.trim()) {
           toast.error('Please enter a question.');
-          return;
-      }
-      if (!user || !user.token) {
-          toast.error('You must be logged in to ask questions.');
           return;
       }
 
@@ -184,13 +194,7 @@ function DocumentItem({ document, onDelete }) {
       setAnswer(''); // Clear previous answer
 
       try {
-          const config = {
-              headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${user.token}`,
-              },
-          };
-          const response = await axios.post(API_URL, { question }, config);
+          const response = await documentService.askQuestion(document._id, question);
           setAnswer(response.data.answer);
       } catch (err) {
           console.error('Q&A error:', err.response?.data || err.message);
@@ -204,68 +208,67 @@ function DocumentItem({ document, onDelete }) {
 
   return (
     <ItemContainer>
-      <ItemHeader>
-        <ItemInfo>
-          <ItemName>{document.fileName}</ItemName>
-          <ItemMeta>
-            Type: {document.fileType} &nbsp;|&nbsp; Size: {(document.fileSize / 1024 / 1024).toFixed(2)} MB &nbsp;|&nbsp; Uploaded: {new Date(document.createdAt).toLocaleDateString()}
-          </ItemMeta>
-        </ItemInfo>
-        <ButtonGroup>
-          <ToggleDetailsButton onClick={() => setShowDetails(!showDetails)}>
-            {showDetails ? 'Hide Details' : 'Show Details'}
-          </ToggleDetailsButton>
-          <ToggleDetailsButton onClick={() => setShowQA(!showQA)}>
-            {showQA ? 'Hide Q&A' : 'Show Q&A'} {/* New button for Q&A */}
-          </ToggleDetailsButton>
-          <DeleteButton onClick={() => onDelete(document._id)}>Delete</DeleteButton>
-        </ButtonGroup>
-      </ItemHeader>
+      <Thumbnail>📄</Thumbnail>
+      <ItemContent>
+        <ItemHeader>
+          <ItemInfo>
+            <ItemName>{document.fileName}</ItemName>
+            <ItemMeta>
+              {(document.fileSize / 1024 / 1024).toFixed(2)} MB | {new Date(document.createdAt).toLocaleDateString()}
+            </ItemMeta>
+          </ItemInfo>
+          <ButtonGroup>
+            <ToggleDetailsButton onClick={() => setShowDetails(!showDetails)}>
+              {showDetails ? 'Hide' : 'Details'}
+            </ToggleDetailsButton>
+            <ToggleDetailsButton onClick={() => setShowQA(!showQA)}>
+              {showQA ? 'Hide' : 'Q&A'}
+            </ToggleDetailsButton>
+            <DeleteButton onClick={() => onDelete(document._id)}>Delete</DeleteButton>
+          </ButtonGroup>
+        </ItemHeader>
 
-      {/* AI Details Section */}
-      {showDetails && (
-        <DetailsContainer>
-          <SectionTitle>Extracted Text:</SectionTitle>
-          <ContentBox>
-            <p>{document.extractedText || 'No extracted text available.'}</p>
-          </ContentBox>
+        {/* AI Details Section */}
+        {showDetails && (
+          <DetailsContainer>
+            <SectionTitle>AI Summary:</SectionTitle>
+            <ContentBox>
+              <p>{document.summary || 'No summary available.'}</p>
+            </ContentBox>
+            <SectionTitle>Extracted Text:</SectionTitle>
+            <ContentBox>
+              <p>{document.extractedText || 'No extracted text available.'}</p>
+            </ContentBox>
+          </DetailsContainer>
+        )}
 
-          <SectionTitle>AI Summary:</SectionTitle>
-          <ContentBox>
-            <p>{document.summary || 'No summary available.'}</p>
-          </ContentBox>
-        </DetailsContainer>
-      )}
+        {/* NEW: Q&A Section */}
+        {showQA && (
+            <QAContainer>
+                <SectionTitle>Ask a Question:</SectionTitle>
+                <QAForm onSubmit={handleAskQuestion}>
+                    <QuestionInput
+                        type="text"
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        placeholder="Type your question..."
+                        disabled={qaLoading}
+                    />
+                    <AskButton type="submit" disabled={qaLoading}>
+                        {qaLoading ? '...' : 'Ask'}
+                    </AskButton>
+                </QAForm>
 
-      {/* NEW: Q&A Section */}
-      {showQA && (
-          <QAContainer>
-              <SectionTitle>Ask a Question:</SectionTitle>
-              <QAForm onSubmit={handleAskQuestion}>
-                  <QuestionInput
-                      type="text"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                      placeholder="Type your question about the document..."
-                      disabled={qaLoading}
-                  />
-                  <AskButton type="submit" disabled={qaLoading}>
-                      {qaLoading ? 'Asking...' : 'Ask'}
-                  </AskButton>
-              </QAForm>
+                {answer && (
+                    <AnswerBox>
+                        <p>{answer}</p>
+                    </AnswerBox>
+                )}
 
-              {answer && (
-                  <>
-                      <SectionTitle>Answer:</SectionTitle>
-                      <AnswerBox>
-                          <p>{answer}</p>
-                      </AnswerBox>
-                  </>
-              )}
-
-              {qaError && <p style={{ color: 'red', marginTop: '10px' }}>Error: {qaError}</p>}
-          </QAContainer>
-      )}
+                {qaError && <p style={{ color: 'var(--red)', marginTop: '10px' }}>Error: {qaError}</p>}
+            </QAContainer>
+        )}
+      </ItemContent>
     </ItemContainer>
   );
 }

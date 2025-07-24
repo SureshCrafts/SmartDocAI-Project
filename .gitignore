@@ -12,5 +12,6 @@ yarn-error.log*
 
 # build directories
 backend/uploads/ # Exclude uploaded files
+backend/.env.docker # Exclude Docker Environment file
 frontend/build/ # Exclude frontend build output
 frontend/.env # Exclude frontend .env if you have one there too

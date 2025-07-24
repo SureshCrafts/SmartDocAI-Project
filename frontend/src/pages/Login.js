@@ -1,11 +1,19 @@
 // frontend/src/pages/Login.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext'; // <--- NEW
-
-const API_URL = 'http://localhost:5001/api/auth/login'; // Your existing API URL
+import authService from '../services/authService';
+import {
+    FormContainer,
+    FormTitle,
+    Form,
+    FormGroup,
+    Input,
+    Button,
+    FormText,
+    FormLink
+} from '../components/FormStyles';
 
 function Login() {
     const [formData, setFormData] = useState({
@@ -36,7 +44,7 @@ function Login() {
         e.preventDefault();
 
         try {
-            const response = await axios.post(API_URL, formData);
+            const response = await authService.login(formData);
             if (response.data) {
                 authLogin(response.data); // <--- Use context login function
                 toast.success('Logged in successfully!');
@@ -49,47 +57,37 @@ function Login() {
     };
 
     return (
-        // ... (your existing form JSX remains the same)
-        <>
-            <section className="heading">
-                <h1>
-                    Login
-                </h1>
-                <p>Login to get started</p>
-            </section>
-
-            <section className="form">
-                <form onSubmit={onSubmit}>
-                    <div className="form-group">
-                        <input
-                            type="email"
-                            className="form-control"
-                            id="email"
-                            name="email"
-                            value={email}
-                            placeholder="Enter your email"
-                            onChange={onChange}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <input
-                            type="password"
-                            className="form-control"
-                            id="password"
-                            name="password"
-                            value={password}
-                            placeholder="Enter password"
-                            onChange={onChange}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <button type="submit" className="btn btn-block">
-                            Submit
-                        </button>
-                    </div>
-                </form>
-            </section>
-        </>
+        <FormContainer>
+            <FormTitle>Sign In</FormTitle>
+            <Form onSubmit={onSubmit}>
+                <FormGroup>
+                    <Input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={email}
+                        placeholder="Email address"
+                        onChange={onChange}
+                        required
+                    />
+                </FormGroup>
+                <FormGroup>
+                    <Input
+                        type="password"
+                        id="password"
+                        name="password"
+                        value={password}
+                        placeholder="Password"
+                        onChange={onChange}
+                        required
+                    />
+                </FormGroup>
+                <Button type="submit">Sign In</Button>
+            </Form>
+            <FormText>
+                New to SmartDoc? <FormLink to="/register">Sign up now.</FormLink>
+            </FormText>
+        </FormContainer>
     );
 }
 

@@ -1,23 +1,21 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 
 // Import the new DocumentItem component
 import DocumentItem from '../components/DocumentItem'; // <--- THIS IS CRUCIAL
+import documentService from '../services/documentService';
 
 // Styled components (ONLY these general layout components remain in Dashboard.js)
 import styled from 'styled-components';
 
 const DashboardContainer = styled.div`
-    padding: 20px;
-    max-width: 900px;
+    padding: 40px 20px;
+    max-width: 1200px;
     margin: 20px auto;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
 `;
 
 const Form = styled.form`
@@ -26,9 +24,9 @@ const Form = styled.form`
     gap: 15px;
     margin-bottom: 30px;
     padding: 20px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--jet);
     border-radius: 8px;
-    background-color: #fff;
+    background-color: var(--charcoal);
 `;
 
 const FormGroup = styled.div`
@@ -39,31 +37,53 @@ const FormGroup = styled.div`
 const Label = styled.label`
     margin-bottom: 5px;
     font-weight: bold;
-    color: #333;
+    color: var(--light-gray);
 `;
 
 const Input = styled.input`
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--jet);
     border-radius: 5px;
     font-size: 1rem;
+    background-color: var(--black);
+    color: var(--light-gray);
+
+    &::file-selector-button {
+        background-color: var(--jet);
+        color: var(--light-gray);
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
 `;
 
 const Button = styled.button`
-    background-color: #007bff;
+    background-color: var(--blue);
     color: white;
     padding: 10px 15px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-size: 1rem;
-    &:hover {
-        background-color: #0056b3;
-    }
 `;
 
 const DocumentList = styled.div`
     margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+`;
+
+const LoadingState = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    font-size: 1.2rem;
+    color: var(--gray);
+    width: 100%;
 `;
 
 
@@ -75,29 +95,13 @@ function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const API_URL = 'http://localhost:5001/api/documents';
-
-    useEffect(() => {
-        if (!user) {
-            navigate('/login');
-            toast.warn('Please log in to view the dashboard.');
-        } else {
-            fetchDocuments();
-        }
-    }, [user, navigate]);
-
-    const fetchDocuments = async () => {
+    const fetchDocuments = useCallback(async () => {
         if (!user || !user.token) return;
 
         setLoading(true);
         setError(null);
         try {
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${user.token}`,
-                },
-            };
-            const response = await axios.get(API_URL, config);
+            const response = await documentService.getDocuments();
             setDocuments(response.data);
         } catch (err) {
             console.error('Failed to fetch documents:', err);
@@ -106,7 +110,16 @@ function Dashboard() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/login');
+            toast.warn('Please log in to view the dashboard.');
+        } else {
+            fetchDocuments();
+        }
+    }, [user, navigate, fetchDocuments]);
 
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
@@ -131,13 +144,7 @@ function Dashboard() {
         formData.append('document', selectedFile);
 
         try {
-            const config = {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    Authorization: `Bearer ${user.token}`,
-                },
-            };
-            const response = await axios.post(API_URL, formData, config);
+            const response = await documentService.uploadDocument(formData);
             toast.success(response.data.message || 'File uploaded successfully!');
             setSelectedFile(null);
             fetchDocuments();
@@ -162,12 +169,7 @@ function Dashboard() {
 
         setLoading(true);
         try {
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${user.token}`,
-                },
-            };
-            await axios.delete(`${API_URL}/${documentId}`, config);
+            await documentService.deleteDocument(documentId);
             toast.success('Document deleted successfully!');
             fetchDocuments();
         } catch (err) {
@@ -178,8 +180,9 @@ function Dashboard() {
         }
     };
 
-    if (loading) return <DashboardContainer>Loading documents...</DashboardContainer>;
-    if (error) return <DashboardContainer>Error: {error}</DashboardContainer>;
+    // Only show the full-page loader on the initial fetch
+    if (loading && documents.length === 0) return <LoadingState>Loading documents...</LoadingState>;
+    if (error) return <LoadingState>Error: {error}</LoadingState>;
     if (!user) return null;
 
     return (
@@ -198,7 +201,7 @@ function Dashboard() {
                         accept=".jpeg,.jpg,.png,.pdf,.doc,.docx,.txt" // Ensure .txt is included
                     />
                 </FormGroup>
-                <Button type="submit">Upload Document</Button>
+                <Button type="submit" disabled={loading}>{loading ? 'Uploading...' : 'Upload Document'}</Button>
             </Form>
 
             <h2>Your Uploaded Documents</h2>

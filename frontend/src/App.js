@@ -16,16 +16,14 @@ function App() {
     <Router>
       <AuthProvider>
         <Header />
-        <div className="container">
-          <Routes>
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-            {/* The Dashboard component will be the default route for logged-in users */}
-            <Route path="/" element={<Dashboard />} /> {/* <--- CHANGED: Set Dashboard as home */}
-            {/* You can uncomment these later if you implement specific document details page */}
-            {/* <Route path="/document/:id" element={<DocumentDetails />} /> */}
-          </Routes>
-        </div>
+        <Routes>
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          {/* The Dashboard component will be the default route for logged-in users */}
+          <Route path="/" element={<Dashboard />} /> {/* <--- CHANGED: Set Dashboard as home */}
+          {/* You can uncomment these later if you implement specific document details page */}
+          {/* <Route path="/document/:id" element={<DocumentDetails />} /> */}
+        </Routes>
         <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
       </AuthProvider>
     </Router>

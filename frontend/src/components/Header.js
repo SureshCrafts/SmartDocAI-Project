@@ -8,17 +8,21 @@ import { useAuth } from '../context/AuthContext'; // NEW
 // Styled Components for our Header
 // THESE DEFINITIONS MUST BE OUTSIDE THE FUNCTION COMPONENT
 const HeaderContainer = styled.header`
-  background-color: #333;
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.85) 0%, rgba(18, 18, 18, 0) 100%);
   color: #fff;
   padding: 1rem 0;
-  margin-bottom: 20px; /* Add some space below the header */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  transition: background-color 0.3s ease;
 `;
 
 const Nav = styled.nav`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 `;
@@ -47,12 +51,12 @@ const NavLink = styled(Link)`
   transition: color 0.3s ease;
 
   &:hover {
-    color: #007bff;
+    color: var(--blue);
   }
 `;
 
 const LogoutButton = styled.button`
-  background-color: #dc3545; /* Red color for logout */
+  background-color: var(--red);
   color: #fff;
   padding: 8px 15px;
   border: none;
@@ -62,7 +66,7 @@ const LogoutButton = styled.button`
   transition: background-color 0.3s ease;
 
   &:hover {
-    background-color: #c82333;
+    background-color: #b20710;
   }
 `;
 

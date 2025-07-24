@@ -4,11 +4,12 @@ const Document = require('../models/documentModel');
 const User = require('../models/userModel');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const axios = require('axios');
+const fs = require('fs'); // Keep for sync operations in multer
+const fsPromises = require('fs').promises; // Use for async file operations
 const pdf = require('pdf-parse'); // For PDF processing
 const mammoth = require('mammoth'); // For DOCX processing
 const Tesseract = require('tesseract.js'); // For OCR on images (if implementing)
+const { queryChatModel } = require('../services/openaiService');
 
 // Configure Multer storage (remains the same)
 const storage = multer.diskStorage({
@@ -51,40 +52,14 @@ const upload = multer({
     }
 }).single('document');
 
-// --- NEW: Function to interact with OpenAI API ---
-async function queryOpenAI(prompt, modelId = 'gpt-3.5-turbo') { // Default to gpt-3.5-turbo
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_API_KEY) {
-        throw new Error('OpenAI API key not set in environment variables.');
-    }
-
-    const API_URL = 'https://api.openai.com/v1/chat/completions'; // Endpoint for chat completions
-
-    try {
-        const response = await axios.post(
-            API_URL,
-            {
-                model: modelId,
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant that summarizes documents concisely.' },
-                    { role: 'user', content: `Summarize the following document content:\n\n${prompt}` }
-                ],
-                max_tokens: 150 // Adjust based on desired summary length
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                },
-            }
-        );
-        return response.data.choices[0].message.content; // Extract the summary text
-    } catch (error) {
-        console.error(`Error querying OpenAI model ${modelId}:`, error.response?.data?.error || error.message);
-        throw new Error(`OpenAI API call failed: ${error.response?.data?.error?.message || error.message}`);
-    }
+// --- Helper function to get a summary from OpenAI ---
+async function getSummaryFromAI(text) {
+    const messages = [
+        { role: 'system', content: 'You are a helpful assistant that summarizes documents concisely.' },
+        { role: 'user', content: `Summarize the following document content:\n\n${text}` }
+    ];
+    return queryChatModel(messages, 'gpt-3.5-turbo', 150);
 }
-// --- END NEW ---
 
 
 // @desc    Upload a new document and process with AI
@@ -145,7 +120,7 @@ const uploadDocument = asyncHandler(async (req, res) => {
 
             if (textForAI.length > 50 && !textForAI.includes('OCR not yet implemented') && !textForAI.includes('Unsupported file type')) {
                 console.log('Attempting to call OpenAI for summarization...');
-                summary = await queryOpenAI(textForAI, 'gpt-3.5-turbo');
+                summary = await getSummaryFromAI(textForAI);
                 console.log('OpenAI Summary received:', summary.substring(0, 200));
             } else {
                 summary = 'Not enough text or unsupported file type for AI summarization.';
@@ -248,7 +223,7 @@ const deleteDocument = asyncHandler(async (req, res) => {
 
     // Delete the file from the file system as well
     if (fs.existsSync(document.filePath)) {
-        fs.unlinkSync(document.filePath); // Delete the actual file
+        await fsPromises.unlink(document.filePath); // Use async unlink
     }
 
     await Document.deleteOne({ _id: req.params.id });
@@ -256,41 +231,15 @@ const deleteDocument = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Document removed' });
 });
 
-async function queryOpenAIForAnswer(documentText, question, modelId = 'gpt-3.5-turbo') {
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_API_KEY) {
-        throw new Error('OpenAI API key not set in environment variables.');
-    }
-
-    const API_URL = 'https://api.openai.com/v1/chat/completions';
-
-    try {
-        const prompt = `Based *only* on the following document text, answer the question. If the answer cannot be found in the text, state that you don't have enough information from the document.\n\nDocument Text:\n"""\n${documentText}\n"""\n\nQuestion: ${question}\n\nAnswer:`;
-
-        const response = await axios.post(
-            API_URL,
-            {
-                model: modelId,
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant that answers questions based on provided text.' },
-                    { role: 'user', content: prompt }
-                ],
-                max_tokens: 200 // Adjust based on desired answer length
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                },
-            }
-        );
-        return response.data.choices[0].message.content.trim();
-    } catch (error) {
-        console.error(`Error querying OpenAI for answer with model ${modelId}:`, error.response?.data?.error || error.message);
-        throw new Error(`OpenAI API call failed: ${error.response?.data?.error?.message || error.message}`);
-    }
+// --- Helper function to get an answer from OpenAI ---
+async function getAnswerFromAI(documentText, question) {
+    const prompt = `Based *only* on the following document text, answer the question. If the answer cannot be found in the text, state that you don't have enough information from the document.\n\nDocument Text:\n"""\n${documentText}\n"""\n\nQuestion: ${question}\n\nAnswer:`;
+    const messages = [
+        { role: 'system', content: 'You are a helpful assistant that answers questions based on provided text.' },
+        { role: 'user', content: prompt }
+    ];
+    return queryChatModel(messages, 'gpt-3.5-turbo', 200);
 }
-// --- END NEW OpenAI Q&A Function ---
 
 
 // @desc    Ask a question about a document (THIS FUNCTION MUST BE BEFORE module.exports)
@@ -324,7 +273,7 @@ const askDocumentQuestion = asyncHandler(async (req, res) => {
     }
 
     try {
-        const answer = await queryOpenAIForAnswer(document.extractedText, question);
+        const answer = await getAnswerFromAI(document.extractedText, question);
         res.status(200).json({ answer });
     } catch (error) {
         console.error('Q&A processing error:', error.message);
